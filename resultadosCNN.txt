@@ -1,0 +1,64 @@
+import tensorflow as tf
+from tensorflow import keras
+from tensorflow.keras import layers
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.optimizers import SGD
+from tensorflow.keras.optimizers import RMSprop
+
+scaler = MinMaxScaler()
+
+# Adjust labels to start from 0
+y_train_adjusted = y_train - 1
+y_test_adjusted = y_test - 1
+
+# Define the CNN model
+model = keras.Sequential(
+        [
+            keras.Input(shape=(X_train_s.shape[1], 1)),
+            layers.Conv1D(32, kernel_size=3, activation="relu", padding='same'),
+            layers.MaxPooling1D(pool_size=2),
+            layers.Conv1D(64, kernel_size=3, activation="relu", padding='same'),
+            layers.MaxPooling1D(pool_size=2),  # Added another MaxPooling layer
+            layers.Conv1D(128, kernel_size=3, activation="relu", padding='same'), # Added another Conv1D layer
+            layers.Flatten(),
+            layers.Dense(256, activation="relu"),  # Increased the number of neurons
+            layers.Dense(len(np.unique(y_train_adjusted)), activation="softmax"),
+        ]
+    )
+
+# Compile the model using ADAM
+model.compile(loss="sparse_categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+
+# Reshape input data for CNN
+X_train_cnn = X_train_s.reshape(X_train_s.shape[0], X_train_s.shape[1], 1)
+X_test_cnn = X_test_s.reshape(X_test_s.shape[0], X_test_s.shape[1], 1)
+
+# Train the model using adjusted labels
+model.fit(X_train_cnn, y_train_adjusted, epochs=200, batch_size=30, validation_split=0.2)
+
+# Evaluate the model using adjusted labels
+loss, accuracy = model.evaluate(X_test_cnn, y_test_adjusted)
+print("Test Loss:", loss)
+print("Test Accuracy:", accuracy)
+
+# Make predictions
+y_pred_cnn = model.predict(X_test_cnn)
+y_pred_classes = np.argmax(y_pred_cnn, axis=1) # Get predicted classes
+
+# Adjust predicted classes back to original range (add 1)
+y_pred_classes_original = y_pred_classes + 1
+
+# Print the best epoch and accuracy
+best_epoch = np.argmax(model.history.history['val_accuracy']) + 1
+print(f"Best epoch: {best_epoch}")
+print(f"Best accuracy: {model.history.history['val_accuracy'][best_epoch-1]}")
+
+# Example to print predictions with driver names
+for i in range(20):
+    driver_id = X_test[i][1]
+    driver_name = drivers_dict.get(driver_id, "Unknown Driver")
+    print(f"Race {i + 1}:")
+    print(f"  Target: {y_test[i]}, Predicted: {y_pred_classes_original[i]}, Driver: {driver_name}") # Use original classes
+
+Epoch 199/200
+11501/11501 ━━━━━━━━━━━━━━━━━━━━ 21s 2ms/step - accuracy: 0.9497 - loss: 0.1817 - val_accuracy: 0.9445 - val_loss: 0.2660
